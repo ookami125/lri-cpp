@@ -1,0 +1,12 @@
+.vscode
+.venv
+build
+buffers/*
+inputs/*
+
+# keep these files so the folders get commited
+!buffers/.gitkeep
+!inputs/.gitkeep
+
+# valgrind files
+vgcore.*

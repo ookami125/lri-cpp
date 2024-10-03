@@ -1,6 +1,9 @@
 # LRI-CPP
 Basic program to extract image data from lri files.
 
+## Credit
+This program is based on the information provided by [@gennyble](https://www.github.com/gennyble) ([gennyble/lri-rs](https://github.com/gennyble/lri-rs)). Also credit to [@dllu](https://github.com/dllu) ([dllu/lri-rs](https://github.com/dllu/lri-rs)) for pulling the original proto files from Lumen.
+
 ## Usage
     Extract the contents of LRI files.
     Usage:

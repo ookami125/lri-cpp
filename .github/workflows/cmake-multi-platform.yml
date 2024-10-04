@@ -72,4 +72,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: lri_extractor-${{ matrix.os }}-${{ matrix.version }}
-        path: "${{ steps.strings.outputs.build-output-dir }}/Release/lri_extractor", "D:\\a\\lri-cpp\\lri-cpp\\build\\Release\\lri_extractor.exe"
+        path: "${{ steps.strings.outputs.build-output-dir }}/Release/lri_extractor, D:\\a\\lri-cpp\\lri-cpp\\build\\Release\\lri_extractor.exe"

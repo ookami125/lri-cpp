@@ -157,7 +157,8 @@ void usage(int argc, char** argv, int exit_code)
 {
     const char* progname = "lri_extractor";
     if(argc > 0) {
-        progname = basename(argv[0]);
+        std::string path = argv[0];
+        progname = path.substr(path.find_last_of("/\\") + 1).c_str();
     }
 
     printf("Extract the contents of LRI files.\n");

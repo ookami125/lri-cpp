@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <unistd.h>
 #include <unordered_map>
 
 #include "image.h"

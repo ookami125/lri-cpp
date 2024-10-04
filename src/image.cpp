@@ -12,9 +12,15 @@ Image::~Image() {
     data.clear();
 }
 
+int clamp(int val, int min, int max) {
+    if(val < min) return min;
+    if(val > max) return max;
+    return val;
+}
+
 uint16_t Image::getColor(int x, int y, int c) {
-    int xc = std::clamp<int>(x, 0, width-1);
-    int yc = std::clamp<int>(y, 0, height-1);
+    int xc = clamp(x, 0, width-1);
+    int yc = clamp(y, 0, height-1);
     return data[(xc+yc*width)*3+c];
 };
 
@@ -28,8 +34,8 @@ uint16_t Image::getColorOrMirror(int x, int y, int c) {
 };
 
 void Image::setColor(int x, int y, int chan, uint16_t color) {
-    int xc = std::clamp<int>(x, 0, width-1);
-    int yc = std::clamp<int>(y, 0, height-1);
+    int xc = clamp(x, 0, width-1);
+    int yc = clamp(y, 0, height-1);
     data[(xc+yc*width)*3+chan] = color;
 }
 

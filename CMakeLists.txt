@@ -11,7 +11,6 @@ add_executable(lri_extractor
 
 set (CMAKE_CXX_STANDARD 20)
 
-add_compile_options(-fsanitize=address)
-add_link_options(-fsanitize=address)
-
-target_compile_options(lri_extractor PRIVATE -msse4.1)
+if(MSVC)
+    add_definitions(-D_CRT_SECURE_NO_WARNINGS)
+endif()

@@ -185,6 +185,7 @@ int main(int argc, char** argv) {
     for(int argi=1; argi<argc; argi += 1) {
         std::string option;
         std::string argument;
+        int seperateArgFlag = 0;
         
         if(argv[argi][0] != '-') {
             options.positionalArgs.push_back(argv[argi]);
@@ -209,8 +210,8 @@ int main(int argc, char** argv) {
         }
 
         if(argument == "" && argi < argc-1) {
-            argi += 1;
             argument = argv[argi];
+            seperateArgFlag = 1;
         }
 
         if(option == "h" || option == "help") {
@@ -225,9 +226,11 @@ int main(int argc, char** argv) {
                 std::exit(1);
             }
             options.format = optFormat->second;
+            argi += seperateArgFlag;
         } else if(option == "o" || option == "output") {
-            options.outputPath = option;
-        } else  if(option == "d" || option == "debayer") {
+            options.outputPath = argument;
+            argi += seperateArgFlag;
+        } else if(option == "d" || option == "debayer") {
             const static std::unordered_map<std::string, DebayerMode> modeStr = {
                 {"none", DebayerMode::None},
                 {"filter", DebayerMode::Filter},
@@ -239,6 +242,7 @@ int main(int argc, char** argv) {
                 std::exit(1);
             }
             options.debayerMode = optMode->second;
+            argi += seperateArgFlag;
         } else {
             printf("Error: Unknown option (%s)\n", option.c_str());
             usage(argc, argv, 1);

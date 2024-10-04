@@ -69,6 +69,7 @@ enum MessageType : uint8_t {
     GPS_DATA = 2,
 };
 
+#pragma pack(push, 1)
 struct LELR_Header {
     char signature[4];
     uint64_t block_length;
@@ -76,7 +77,8 @@ struct LELR_Header {
     uint32_t message_length;
     MessageType message_type;
     uint8_t padding[7];
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
 struct Options {
     ImageFileFormat format = ImageFileFormat::PGM;

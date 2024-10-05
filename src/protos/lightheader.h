@@ -181,7 +181,7 @@ struct Compatibility {
     /*2*/ std::string features;
 
     Compatibility(picoproto::Message* message) :
-        version (message->GetUInt64(1)),
+        version (message->GetUInt32(1)),
         features (message->GetString(2))
     {}
 };

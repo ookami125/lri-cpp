@@ -12,10 +12,10 @@ struct RectangleI {
     RectangleI(){}
 
     RectangleI(picoproto::Message* message) : 
-        x (message->GetInt64(1)),
-        y (message->GetInt64(2)),
-        width (message->GetInt64(3)),
-        height (message->GetInt64(4))
+        x (message->GetInt32(1)),
+        y (message->GetInt32(2)),
+        width (message->GetInt32(3)),
+        height (message->GetInt32(4))
     {}
 };
 

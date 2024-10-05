@@ -5,7 +5,7 @@
 #include "utils.h"
 
 uint16_t average(uint16_t lhs, uint16_t rhs) {
-    return (lhs >> 1) + (rhs >> 1) + (lhs & rhs & 1);
+    return (uint16_t)((lhs >> 1) + (rhs >> 1u) + (lhs & rhs & 1));
 }
 
 Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode) {
@@ -38,8 +38,8 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
         case DebayerMode::Interpolate: {
             //Interpolate RGB values to other pixels
             Image debayeredImage = image;
-            for(size_t y=0; y<image.height; y++) {
-                for(size_t x=0; x<image.width; x++) {
+            for(int32_t y=0; y<(int64_t)image.height; y++) {
+                for(int32_t x=0; x<(int64_t)image.width; x++) {
                     char id = map[((y%2)<<1) | x % 2];
                     switch(id) {
                         case R: {

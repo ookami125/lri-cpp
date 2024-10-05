@@ -10,10 +10,10 @@ enum class ImageFileFormat {
 
 struct Image {
     std::vector<uint16_t> data;
-    size_t width, height;
+    uint32_t width, height;
     uint8_t channels;
 
-    Image(size_t width, size_t height, uint8_t channels);
+    Image(uint32_t width, uint32_t height, uint8_t channels);
     ~Image();
 
     uint16_t getColor(int x, int y, int c);

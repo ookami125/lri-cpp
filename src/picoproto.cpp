@@ -77,7 +77,7 @@ void ReadWireTypeAndFieldNumber(uint8_t** current, size_t* remaining,
                                 uint8_t* wire_type, uint32_t* field_number) {
   uint64_t wire_type_and_field_number = ReadVarInt(current, remaining);
   *wire_type = wire_type_and_field_number & 0x07;
-  *field_number = wire_type_and_field_number >> 3;
+  *field_number = (uint32_t)(wire_type_and_field_number >> 3);
 }
 
 }  // namespace

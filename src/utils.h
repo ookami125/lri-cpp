@@ -10,7 +10,7 @@ inline void swap(char& lhs, char& rhs) {
 
 inline std::string toLower(std::string str) {
     for(char& c : str) {
-        c = tolower(c);
+        c = (char)tolower(c);
     }
     return str;
 }

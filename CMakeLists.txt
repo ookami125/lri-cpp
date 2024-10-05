@@ -19,5 +19,5 @@ add_executable(lri_extractor
 if(MSVC)
   target_compile_options(lri_extractor PRIVATE /W4 /WX)
 else()
-  target_compile_options(lri_extractor PRIVATE -Wall -Wextra -Wpedantic -Werror)
+  target_compile_options(lri_extractor PRIVATE -Wall -Wextra -Wpedantic -Werror -Wconversion)
 endif()

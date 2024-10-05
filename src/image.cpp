@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include "error.h"
 
-Image::Image(size_t width, size_t height, uint8_t channels) :
+Image::Image(uint32_t width, uint32_t height, uint8_t channels) :
     width(width), height(height), channels(channels)
 {
     data.resize(width * height * channels);
@@ -56,7 +56,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 return {{"Error: invalid number of channels for PGM file format!"}};
             }
 
-            fprintf(file, "%zu %zu\n%d\n", width, height, max);
+            fprintf(file, "%d %d\n%d\n", width, height, max);
 
             for(size_t y=0; y<height; ++y) {
                 for(size_t x=0; x<width; ++x) {

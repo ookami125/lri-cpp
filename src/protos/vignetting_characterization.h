@@ -14,8 +14,8 @@ struct CrosstalkModel {
     /*4*/ std::vector<std::pair<uint8_t*, size_t>> data_packed; // [packed = true];
 
     CrosstalkModel(picoproto::Message* message) :
-        width (message->GetUInt64(1)),
-        height (message->GetUInt64(2)),
+        width (message->GetUInt32(1)),
+        height (message->GetUInt32(2)),
         data (To<Matrix4x4F>(message->GetMessageArray(3))),
         data_packed (message->GetByteArray(4))
     {}
@@ -37,8 +37,8 @@ struct VignettingModel {
     /*3*/ std::vector<std::pair<uint8_t*, size_t>> data; // [packed = true];
 
     VignettingModel(picoproto::Message* message) :
-        width (message->GetUInt64(1)),
-        height (message->GetUInt64(2)),
+        width (message->GetUInt32(1)),
+        height (message->GetUInt32(2)),
         data (message->GetByteArray(3))
     {}
 };
@@ -57,7 +57,7 @@ struct MirrorVignettingModel {
     /*2*/ VignettingModel vignetting;
 
     MirrorVignettingModel(picoproto::Message* message) :
-        hall_code (message->GetInt64(1)),
+        hall_code (message->GetInt32(1)),
         vignetting (message->GetMessage(2))
     {}
 };

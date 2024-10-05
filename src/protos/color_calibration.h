@@ -22,8 +22,8 @@ struct SpectralSensitivity {
     /*3*/ std::vector<std::pair<uint8_t*, size_t>> data; //[packed = true]
 
     SpectralSensitivity(picoproto::Message* message) :
-        start (message->GetUInt64(1)),
-        end (message->GetUInt64(2)),
+        start (message->GetUInt32(1)),
+        end (message->GetUInt32(2)),
         data (message->GetByteArray(3))
     {}
 };

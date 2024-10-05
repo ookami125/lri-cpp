@@ -47,13 +47,13 @@ struct BitReader {
     }
 };
 
-Image unpackToImage(const uint8_t* data, size_t width, size_t height) {
+Image unpackToImage(const uint8_t* data, uint32_t width, uint32_t height) {
     BitReader reader = BitReader(data, (width*height*10+9)/16 * 2);
 
     Image image = Image(width, height, 1);
 
-    for(size_t y=0; y<height; ++y) {
-        for(size_t x=0; x<width; ++x) {
+    for(uint32_t y=0; y<height; ++y) {
+        for(uint32_t x=0; x<width; ++x) {
             uint16_t bits;
             if(!reader.getNext10BitValue(bits)) { return image; }
             image.data[x+y*width] = bits;
@@ -131,8 +131,8 @@ ErrorOr<void> processImage(Options opts)
                     uint8_t bayer = 0;
                     if(module.sensor_bayer_red_override.has_value()) {
                         auto bayer_offset = module.sensor_bayer_red_override.value();
-                        bayer = (bayer_offset.x + 2) % 2;
-                        bayer |= ((bayer_offset.y + 2) % 2) << 1;
+                        bayer = (uint8_t)((bayer_offset.x + 2) % 2);
+                        bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
                     }
 
                     char filename_buffer[256];

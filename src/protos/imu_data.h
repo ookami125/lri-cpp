@@ -11,7 +11,7 @@ struct Sample {
     /*2*/ Point3F data;
 
     Sample(picoproto::Message* message) :
-        row_idx (message->GetUInt64(1)),
+        row_idx (message->GetUInt32(1)),
         data (message->GetMessage(2))
     {}
 };
@@ -30,7 +30,7 @@ struct IMUData {
     /*3*/ std::vector<Sample> gyroscope;
 
     IMUData(picoproto::Message* message) :
-        frame_index (message->GetUInt64(1)),
+        frame_index (message->GetUInt32(1)),
         accelerometer (To<Sample>(message->GetMessageArray(2))),
         gyroscope (To<Sample>(message->GetMessageArray(2)))
     {}

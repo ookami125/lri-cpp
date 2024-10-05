@@ -217,30 +217,27 @@ def process_images(image_files):
         gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
         gray_overlay = cv2.cvtColor(overlay_image, cv2.COLOR_BGR2GRAY)
 
-        sift = cv2.SIFT_create()
-        keypoints_base, descriptors_base = sift.detectAndCompute(gray_base, None)
-        keypoints_overlay, descriptors_overlay = sift.detectAndCompute(gray_overlay, None)
+        orb = cv2.ORB_create(nfeatures=10000)
+        keypoints_base, descriptors_base = orb.detectAndCompute(gray_base, None)
+        keypoints_overlay, descriptors_overlay = orb.detectAndCompute(gray_overlay, None)
 
-        index_params = dict(algorithm=1, trees=5)
-        search_params = dict(checks=50)
-        flann = cv2.FlannBasedMatcher(index_params, search_params)
+        bf = cv2.BFMatcher(cv2.NORM_HAMMING, crossCheck=False)
 
-        matches = flann.knnMatch(descriptors_base, descriptors_overlay, k=2)
+        descriptors_base = np.uint8(descriptors_base)
+        descriptors_overlay = np.uint8(descriptors_overlay)
+
+        matches = bf.knnMatch(descriptors_base, descriptors_overlay, k=2)
 
         good_matches = []
         for m, n in matches:
-            if m.distance < 0.7 * n.distance:
+            if m.distance < 0.75 * n.distance:
                 good_matches.append(m)
 
         if len(good_matches) >= 4:
-            points_base = np.zeros((len(good_matches), 2), dtype=np.float32)
-            points_overlay = np.zeros((len(good_matches), 2), dtype=np.float32)
+            points_base = np.float32([keypoints_base[m.queryIdx].pt for m in good_matches]).reshape(-1, 1, 2)
+            points_overlay = np.float32([keypoints_overlay[m.trainIdx].pt for m in good_matches]).reshape(-1, 1, 2)
 
-            for i, match in enumerate(good_matches):
-                points_base[i, :] = keypoints_base[match.queryIdx].pt
-                points_overlay[i, :] = keypoints_overlay[match.trainIdx].pt
-
-            h, mask = cv2.findHomography(points_overlay, points_base, cv2.RANSAC)
+            h, mask = cv2.findHomography(points_overlay, points_base, cv2.RANSAC, 5.0)
             
             #debug_overlay_image = generate_noise_image(overlay_image.shape[1], overlay_image.shape[0], 'uniform')
             #overlay_image = debug_overlay_image

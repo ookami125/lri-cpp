@@ -186,6 +186,7 @@ ErrorOr<Options> argparse(int argc, char** argv) {
     {
         std::string option;
         std::string argument;
+        int seperateArgFlag = 0;
         
         if(argv[argi][0] != '-') {
             ret.positionalArgs.push_back(argv[argi]);
@@ -210,8 +211,8 @@ ErrorOr<Options> argparse(int argc, char** argv) {
         }
 
         if(argument == "" && argi < argc-1) {
-            argi += 1;
             argument = argv[argi];
+            seperateArgFlag = 1;
         }
 
         if(option == "h" || option == "help") {
@@ -224,10 +225,12 @@ ErrorOr<Options> argparse(int argc, char** argv) {
             if(optFormat == formatStr.end()) {
                 return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            ret.format = optFormat->second;
+            options.format = optFormat->second;
+            argi += seperateArgFlag;
         } else if(option == "o" || option == "output") {
-            ret.outputPath = option;
-        } else  if(option == "d" || option == "debayer") {
+            options.outputPath = argument;
+            argi += seperateArgFlag;
+        } else if(option == "d" || option == "debayer") {
             const static std::unordered_map<std::string, DebayerMode> modeStr = {
                 {"none", DebayerMode::None},
                 {"filter", DebayerMode::Filter},
@@ -237,7 +240,8 @@ ErrorOr<Options> argparse(int argc, char** argv) {
             if(optMode == modeStr.end()) {
                 return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            ret.debayerMode = optMode->second;
+            options.debayerMode = optMode->second;
+            argi += seperateArgFlag;
         } else {
             return {{"Error: Unknown option (" + option + ")\n"}};
         }

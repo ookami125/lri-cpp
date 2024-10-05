@@ -8,7 +8,7 @@ ErrorOr<char*> loadFile(const char* path, size_t& length)
         return {{"Failed to open file ("+std::string(path)+")"}};
     }
     fseek(file, 0, SEEK_END);
-    length = ftell(file);
+    length = (size_t)ftell(file);
     fseek(file, 0, SEEK_SET);
     char* data = (char*)malloc(length);
     if(data == nullptr) {

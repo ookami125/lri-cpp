@@ -80,7 +80,7 @@ struct VignettingCharacterization {
         crosstalk (message->GetMessage(1)),
         vignetting (To<MirrorVignettingModel>(message->GetMessageArray(2))),
         relative_brightness (ToOptional(message->GetFloatArray(3))),
-        lens_hall_code (ToOptional(message->GetInt64Array(4)))
+        lens_hall_code (ToOptional(message->GetInt32Array(4)))
     {}
 };
 

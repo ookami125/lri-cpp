@@ -26,7 +26,7 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
     for(size_t y=0; y<srcImage->height; ++y) {
         for(size_t x=0; x<srcImage->width; ++x) {
             char id = map[((y%2)<<1) | x%2];
-            image.data[(x+y*image.width)*3+id] = srcImage->data[x+y*srcImage->width];
+            image.setColor(x, y, id, srcImage->getColor(x, y, 0));
         }
     }
 

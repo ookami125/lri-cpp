@@ -55,7 +55,7 @@ struct ActuatorAnglePair {
     /*2*/ float angle;
 
     ActuatorAnglePair(picoproto::Message* message) :
-        hall_code (message->GetInt32(1)),
+        hall_code ((int32_t)message->GetInt64(1)),
         angle (message->GetFloat(2))
     {}
 };

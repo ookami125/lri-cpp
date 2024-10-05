@@ -15,7 +15,7 @@ ErrorOr<char*> loadFile(const char* path, size_t& length)
         return {{"Failed allocate ("+std::to_string(length)+" bytes) for file ("+std::string(path)+")"}};
     }
     size_t rlength = fread(data, length, 1, file);
-    if(rlength != length) {
+    if(rlength != 1) {
         return {{"Failed to read whole file ("+std::string(path)+")"}};
     }
     fclose(file);

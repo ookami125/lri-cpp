@@ -70,7 +70,7 @@ struct Surface {
         start ((Point2I)message->GetMessage(1)),
         size ((Point2I)message->GetMessage(2)),
         format ((FormatType)message->GetUInt64(3)),
-        row_stride (message->GetUInt32(4)),
+        row_stride ((uint32_t)message->GetUInt64(4)),
         data_offset (message->GetUInt64(5)),
         data_scale ((Point2F)message->GetMessage(6))
     {}
@@ -115,7 +115,7 @@ struct CameraModule {
         id ((CameraID)(message->GetUInt64(2))),
         is_enabled (ToOptional(message->GetBoolArray(3))),
         mirror_position (ToOptional(message->GetInt32Array(4))),
-        lens_position (message->GetInt32(5)),
+        lens_position ((int32_t)message->GetInt64(5)),
         sensor_analog_gain (message->GetFloat(7)),
         sensor_exposure (message->GetUInt64(8)),
         sensor_data_surface ((Surface)(message->GetMessage(9))),

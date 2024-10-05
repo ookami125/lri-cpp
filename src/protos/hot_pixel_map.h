@@ -17,9 +17,9 @@ struct HotPixelMeasurement {
 
     HotPixelMeasurement(picoproto::Message* message) :
         data_offset (message->GetUInt64(1)),
-        data_size (message->GetUInt32(2)),
-        data_exposure (message->GetUInt32(3)),
-        sensor_temparature (message->GetInt32(4)),
+        data_size ((uint32_t)message->GetUInt64(2)),
+        data_exposure ((uint32_t)message->GetUInt64(3)),
+        sensor_temparature ((int32_t)message->GetInt64(4)),
         sensor_gain (message->GetFloat(5)),
         pixel_variance (ToOptional(message->GetFloatArray(6))),
         threshold (ToOptional(message->GetFloatArray(7)))

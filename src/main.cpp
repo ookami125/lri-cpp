@@ -211,7 +211,7 @@ ErrorOr<Options> argparse(int argc, char** argv) {
         }
 
         if(argument == "" && argi < argc-1) {
-            argument = argv[argi];
+            argument = argv[argi + 1];
             seperateArgFlag = 1;
         }
 

@@ -14,7 +14,7 @@ struct DeadPixelMap {
 
     DeadPixelMap(picoproto::Message* message) :
         data_offset (message->GetInt64(1)),
-        data_size (message->GetInt32(2)),
+        data_size ((uint32_t)message->GetInt64(2)),
         black_level_threshold (ToOptional(message->GetFloatArray(3)))
     {}
 };

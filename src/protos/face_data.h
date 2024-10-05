@@ -36,7 +36,7 @@ struct FaceData {
 
     FaceData(picoproto::Message* message) :
         id ((CameraID) message->GetUInt64(1)),
-        frame_index (message->GetInt32(2)),
+        frame_index ((uint32_t)message->GetInt64(2)),
         rois (To<ROI>(message->GetMessageArray(3)))
     {}
 };

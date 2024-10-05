@@ -23,8 +23,8 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
 
     // Pull out RGB values into their seperate channels
     Image image = Image(srcImage->width, srcImage->height, 3);
-    for(uint32_t y=0; y<srcImage->height; ++y) {
-        for(uint32_t x=0; x<srcImage->width; ++x) {
+    for(int32_t y=0; y<(int32_t)srcImage->height; ++y) {
+        for(int32_t x=0; x<(int32_t)srcImage->width; ++x) {
             char id = map[((y%2)<<1) | x%2];
             image.setColor(x, y, id, srcImage->getColor(x, y, 0));
         }

@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include "error.h"
 
 inline void swap(char& lhs, char& rhs) {
     char temp = lhs;
@@ -9,18 +10,9 @@ inline void swap(char& lhs, char& rhs) {
 
 inline std::string toLower(std::string str) {
     for(char& c : str) {
-        c = tolower(c);
+        c = (char)tolower(c);
     }
     return str;
 }
 
-inline char* loadFile(const char* path, size_t& length) {
-    FILE* file = fopen(path, "rb");
-    fseek(file, 0, SEEK_END);
-    length = ftell(file);
-    fseek(file, 0, SEEK_SET);
-    char* data = (char*)malloc(length);
-    fread(data, length, 1, file);
-    fclose(file);
-    return data;
-}
+ErrorOr<char*> loadFile(const char* path, size_t& length);

@@ -38,7 +38,7 @@ struct VstNoiseModel {
     /*7*/ std::optional<VstModel> panchromatic;
 
     VstNoiseModel(picoproto::Message* message) :
-        gain (message->GetUInt64(1)),
+        gain ((uint32_t)message->GetUInt64(1)),
         threshold (message->GetFloat(2)),
         scale (message->GetFloat(3)),
         red (message->GetMessage(4)),

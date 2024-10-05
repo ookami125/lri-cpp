@@ -140,10 +140,10 @@ struct FlashData {
 
     FlashData(picoproto::Message* message) :
         mode ((Mode)message->GetUInt64(1)),
-        ledcool_current (ToOptional(message->GetUInt64Array(2))),
-        ledwarm_current (ToOptional(message->GetUInt64Array(3))),
-        flash_duration (ToOptional(message->GetUInt64Array(4))),
-        offset_duration (ToOptional(message->GetInt64Array(5)))
+        ledcool_current (ToOptional(message->GetUInt32Array(2))),
+        ledwarm_current (ToOptional(message->GetUInt32Array(3))),
+        flash_duration (ToOptional(message->GetUInt32Array(4))),
+        offset_duration (ToOptional(message->GetInt32Array(5)))
     {}
 };
 
@@ -164,7 +164,7 @@ struct AFDebugInfo {
 
     AFDebugInfo(picoproto::Message* message) :
         focus_achieved (ToOptional(message->GetBoolArray(1))),
-        image_focal_length (ToOptional(message->GetInt64Array(2)))
+        image_focal_length (ToOptional(message->GetInt32Array(2)))
     {}
 };
 
@@ -181,7 +181,7 @@ struct Compatibility {
     /*2*/ std::string features;
 
     Compatibility(picoproto::Message* message) :
-        version (message->GetUInt64(1)),
+        version ((uint32_t)message->GetUInt64(1)),
         features (message->GetString(2))
     {}
 };

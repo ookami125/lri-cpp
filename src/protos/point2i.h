@@ -12,8 +12,8 @@ struct Point2I {
     Point2I(){}
 
     Point2I(picoproto::Message* message) : 
-        x (message->GetInt64(1)),
-        y (message->GetInt64(2))
+        x ((int32_t)message->GetInt64(1)),
+        y ((int32_t)message->GetInt64(2))
     {}
 };
 

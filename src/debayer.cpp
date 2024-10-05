@@ -5,7 +5,7 @@
 #include "utils.h"
 
 uint16_t average(uint16_t lhs, uint16_t rhs) {
-    return (lhs >> 1) + (rhs >> 1) + (lhs & rhs & 1);
+    return (uint16_t)((lhs >> 1) + (rhs >> 1u) + (lhs & rhs & 1));
 }
 
 Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode) {
@@ -23,10 +23,10 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
 
     // Pull out RGB values into their seperate channels
     Image image = Image(srcImage->width, srcImage->height, 3);
-    for(int y=0; y<srcImage->height; ++y) {
-        for(int x=0; x<srcImage->width; ++x) {
+    for(int32_t y=0; y<(int32_t)srcImage->height; ++y) {
+        for(int32_t x=0; x<(int32_t)srcImage->width; ++x) {
             char id = map[((y%2)<<1) | x%2];
-            image.data[(x+y*image.width)*3+id] = srcImage->data[x+y*srcImage->width];
+            image.setColor(x, y, id, srcImage->getColor(x, y, 0));
         }
     }
 
@@ -38,8 +38,8 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
         case DebayerMode::Interpolate: {
             //Interpolate RGB values to other pixels
             Image debayeredImage = image;
-            for(int y=0; y<image.height; y++) {
-                for(int x=0; x<image.width; x++) {
+            for(int32_t y=0; y<(int64_t)image.height; y++) {
+                for(int32_t x=0; x<(int64_t)image.width; x++) {
                     char id = map[((y%2)<<1) | x % 2];
                     switch(id) {
                         case R: {

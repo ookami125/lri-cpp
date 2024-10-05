@@ -77,7 +77,7 @@ void ReadWireTypeAndFieldNumber(uint8_t** current, size_t* remaining,
                                 uint8_t* wire_type, uint32_t* field_number) {
   uint64_t wire_type_and_field_number = ReadVarInt(current, remaining);
   *wire_type = wire_type_and_field_number & 0x07;
-  *field_number = wire_type_and_field_number >> 3;
+  *field_number = (uint32_t)(wire_type_and_field_number >> 3);
 }
 
 }  // namespace
@@ -207,17 +207,17 @@ bool Message::ParseFromBytes(uint8_t* bytes, size_t bytes_size) {
     ReadWireTypeAndFieldNumber(&current, &remaining, &wire_type, &field_number);
     switch (wire_type) {
       case WIRETYPE_VARINT: {
-        Field* field = AddField(field_number, FIELD_UINT64);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT64);
         const uint64_t varint = ReadVarInt(&current, &remaining);
         field->value.v_uint64->push_back(varint);
       } break;
       case WIRETYPE_64BIT: {
-        Field* field = AddField(field_number, FIELD_UINT64);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT64);
         const uint64_t value = ReadFromBytes<uint64_t>(&current, &remaining);
         field->value.v_uint64->push_back(value);
       } break;
       case WIRETYPE_LENGTH_DELIMITED: {
-        Field* field = AddField(field_number, FIELD_BYTES);
+        Field* field = AddField((int32_t)field_number, FIELD_BYTES);
         const uint64_t size = ReadVarInt(&current, &remaining);
         uint8_t* data;
         if (copy_arrays) {
@@ -242,7 +242,7 @@ bool Message::ParseFromBytes(uint8_t* bytes, size_t bytes_size) {
         PP_LOG(ERROR) << "Unhandled wire type encountered";
       } break;
       case WIRETYPE_32BIT: {
-        Field* field = AddField(field_number, FIELD_UINT32);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT32);
         const uint32_t value = ReadFromBytes<uint32_t>(&current, &remaining);
         field->value.v_uint32->push_back(value);
       } break;
@@ -287,7 +287,7 @@ int32_t Message::GetInt32(int32_t number) {
   Field* field = GetFieldAndCheckType(number, FIELD_UINT32);
   uint32_t first_value = (*(field->value.v_uint32))[0];
   int32_t zig_zag_decoded =
-    static_cast<int32_t>((first_value >> 1) ^ (-(first_value & 1)));
+    static_cast<int32_t>((first_value >> 1) ^ bit_cast<uint32_t>(-bit_cast<int32_t>(first_value & 1)));
   return zig_zag_decoded;
 }
 
@@ -295,7 +295,7 @@ int64_t Message::GetInt64(int32_t number) {
   Field* field = GetFieldAndCheckType(number, FIELD_UINT64);
   uint64_t first_value = (*(field->value.v_uint64))[0];
   int64_t zig_zag_decoded =
-    static_cast<int64_t>((first_value >> 1) ^ (-(first_value & 1)));
+    static_cast<int64_t>((first_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(first_value & 1)));
   return zig_zag_decoded;
 }
 
@@ -375,7 +375,7 @@ std::vector<int32_t> Message::GetInt32Array(int32_t number) {
   std::vector<int32_t> result;
   for (uint64_t raw_value : raw_array) {
     int32_t zig_zag_decoded =
-      static_cast<int32_t>((raw_value >> 1) ^ (-(raw_value & 1)));
+      static_cast<int32_t>((raw_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(raw_value & 1)));
     result.push_back(zig_zag_decoded);
   }
   return result;
@@ -386,7 +386,7 @@ std::vector<int64_t> Message::GetInt64Array(int32_t number) {
   std::vector<int64_t> result;
   for (uint64_t raw_value : raw_array) {
     int64_t zig_zag_decoded =
-      static_cast<int64_t>((raw_value >> 1) ^ (-(raw_value & 1)));
+      static_cast<int64_t>((raw_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(raw_value & 1)));
     result.push_back(zig_zag_decoded);
   }
   return result;
@@ -421,7 +421,7 @@ std::vector<uint64_t> Message::GetUInt64Array(int32_t number) {
       size_t remaining = data_info.second;
       while (remaining > 0) {
         const uint64_t varint = ReadVarInt(&current, &remaining);
-        result.push_back(static_cast<int64_t>(varint));
+        result.push_back(varint);
       }
     }
   } else {
@@ -535,7 +535,7 @@ std::vector<Message*> Message::GetMessageArray(int32_t number) {
     return result;
   }
   if (field->type == FIELD_BYTES) {
-    for (int i = 0; i < field->value.v_bytes->size(); ++i) {
+    for (size_t i = 0; i < field->value.v_bytes->size(); ++i) {
       Message* cached_message = field->cached_messages->at(i);
       if (!cached_message) {
         std::pair<uint8_t*, size_t> value = field->value.v_bytes->at(i);

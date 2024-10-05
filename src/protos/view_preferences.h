@@ -128,7 +128,7 @@ struct ViewPreferences {
         orientation (ToOptional<Orientation>(message->GetInt64Array(9))),
         image_gain (ToOptional(message->GetFloatArray(10))),
         image_integration_time_ns (ToOptional(message->GetUInt64Array(11))),
-        user_rating (ToOptional(message->GetUInt64Array(12))),
+        user_rating (ToOptional(message->GetUInt32Array(12))),
         aspect_ratio (ToOptional<AspectRatio>(message->GetInt64Array(13))),
         crop (ToOptional<Crop>(message->GetMessageArray(14))),
         awb_gains (ToOptional<ChannelGain>(message->GetMessageArray(15))),

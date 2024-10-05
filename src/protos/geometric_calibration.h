@@ -110,7 +110,7 @@ struct CalibrationFocusBundle {
         focus_distance (message->GetFloat(1)),
         intrinsics (ToOptional<Intrinsics>(message->GetMessageArray(2))),
         extrinsics (ToOptional<Extrinsics>(message->GetMessageArray(3))),
-        sensor_temp (ToOptional<int32_t>(message->GetInt64Array(4))),
+        sensor_temp (ToOptional(message->GetInt32Array(4))),
         device_temp (ToOptional<DeviceTemp>(message->GetMessageArray(5))),
         focus_hall_code (ToOptional(message->GetFloatArray(6)))
     {}

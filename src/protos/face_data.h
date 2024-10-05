@@ -13,7 +13,7 @@ struct ROI {
     /*3*/ std::optional<float> confidence;
 
     ROI(picoproto::Message* message) :
-        id (ToOptional(message->GetUInt64Array(1))),
+        id (ToOptional(message->GetUInt32Array(1))),
         roi (ToOptional<RectangleI>(message->GetMessageArray(1))),
         confidence (ToOptional(message->GetFloatArray(1)))
     {}
@@ -36,7 +36,7 @@ struct FaceData {
 
     FaceData(picoproto::Message* message) :
         id ((CameraID) message->GetUInt64(1)),
-        frame_index (message->GetInt64(2)),
+        frame_index ((uint32_t)message->GetInt64(2)),
         rois (To<ROI>(message->GetMessageArray(3)))
     {}
 };

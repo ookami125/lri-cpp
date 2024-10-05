@@ -5,7 +5,6 @@
 #include <vector>
 #include <string>
 #include <optional>
-#include <unistd.h>
 #include <unordered_map>
 
 #include "image.h"
@@ -48,13 +47,13 @@ struct BitReader {
     }
 };
 
-Image unpackToImage(const uint8_t* data, size_t width, size_t height, uint8_t bayerPattern) {
+Image unpackToImage(const uint8_t* data, uint32_t width, uint32_t height) {
     BitReader reader = BitReader(data, (width*height*10+9)/16 * 2);
 
     Image image = Image(width, height, 1);
 
-    for(int y=0; y<height; ++y) {
-        for(int x=0; x<width; ++x) {
+    for(uint32_t y=0; y<height; ++y) {
+        for(uint32_t x=0; x<width; ++x) {
             uint16_t bits;
             if(!reader.getNext10BitValue(bits)) { return image; }
             image.data[x+y*width] = bits;
@@ -70,6 +69,7 @@ enum MessageType : uint8_t {
     GPS_DATA = 2,
 };
 
+#pragma pack(push, 1)
 struct LELR_Header {
     char signature[4];
     uint64_t block_length;
@@ -77,7 +77,8 @@ struct LELR_Header {
     uint32_t message_length;
     MessageType message_type;
     uint8_t padding[7];
-} __attribute__((packed));
+};
+#pragma pack(pop)
 
 struct Options {
     ImageFileFormat format = ImageFileFormat::PGM;
@@ -86,20 +87,23 @@ struct Options {
     std::vector<std::string> positionalArgs;
 };
 
-void processImage(Options opts)
+ErrorOr<void> processImage(Options opts)
 {
     if(opts.positionalArgs.size() == 0) {
-        printf("Error: LRI File not provided!");
-        std::exit(1);
+        return {{"LRI File not provided!"}};
     }
 
     size_t length = 0;
-    uint8_t* data = (uint8_t*)loadFile(opts.positionalArgs[0].c_str(), length);
+    ErrorOr<char*> eorData = loadFile(opts.positionalArgs[0].c_str(), length);
+    if(!eorData.ok()) {
+        return eorData.error();
+    }
+    uint8_t* data = (uint8_t*)eorData.value();
 
     int surfaceCount = 0;
     
     LELR_Header* header = (LELR_Header*)nullptr;
-    for(uint8_t* offset = data; offset - data < length; offset += header->block_length)
+    for(uint8_t* offset = data; (size_t)(offset - data) < length; offset += header->block_length)
     {
         header = (LELR_Header*)offset;
 
@@ -124,18 +128,16 @@ void processImage(Options opts)
                 
                 if(surface.format == FormatType::RAW_PACKED_10BPP)
                 {
-                    size_t length = surface.size.y * surface.row_stride;
-                    
                     uint8_t bayer = 0;
                     if(module.sensor_bayer_red_override.has_value()) {
                         auto bayer_offset = module.sensor_bayer_red_override.value();
-                        bayer = (bayer_offset.x + 2) % 2;
-                        bayer |= ((bayer_offset.y + 2) % 2) << 1;
+                        bayer = (uint8_t)((bayer_offset.x + 2) % 2);
+                        bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
                     }
 
                     char filename_buffer[256];
                     sprintf(filename_buffer, "%s/%02d-%s.pgm", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format]);
-                    Image img = unpackToImage(data_offset, 4160, 3120, bayer);
+                    Image img = unpackToImage(data_offset, 4160, 3120);
 
                     if(opts.debayerMode != DebayerMode::None) {
                         img = debayerImage(&img, bayer, opts.debayerMode);
@@ -144,19 +146,22 @@ void processImage(Options opts)
                     img.writeToFile(filename_buffer, opts.format);
                 }
                 else {
-                    printf("[%s ]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
+                    printf("[%d]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
                 }
                 surfaceCount += 1;
             }
         }
     }
+
+    return {};
 }
 
 void usage(int argc, char** argv, int exit_code)
 {
     const char* progname = "lri_extractor";
     if(argc > 0) {
-        progname = basename(argv[0]);
+        std::string path = argv[0];
+        progname = path.substr(path.find_last_of("/\\") + 1).c_str();
     }
 
     printf("Extract the contents of LRI files.\n");
@@ -169,26 +174,22 @@ void usage(int argc, char** argv, int exit_code)
     printf("  -h --help     Show this screen.\n");
     printf("  -f --format   Output format [default: PGM] (PGM)\n");
     printf("  -o --output   Output path [default: \"buffers\"]\n");
-    printf("  -d --debayer  Debayering mode [default: Interleaved] (None, Filter, Interleaved)\n");
+    printf("  -d --debayer  Debayering mode [default: Interpolated] (None, Filter, Interpolated)\n");
 
     std::exit(exit_code);
 }
 
-int main(int argc, char** argv) {
+ErrorOr<Options> argparse(int argc, char** argv) {
+    Options ret = {};
 
-    if(argc < 2) {
-        usage(argc, argv, 1);
-    }
-
-    Options options;
-
-    for(int argi=1; argi<argc; argi += 1) {
+    for(int argi=1; argi<argc; argi += 1)
+    {
         std::string option;
         std::string argument;
         int seperateArgFlag = 0;
         
         if(argv[argi][0] != '-') {
-            options.positionalArgs.push_back(argv[argi]);
+            ret.positionalArgs.push_back(argv[argi]);
             continue;
         }
 
@@ -210,7 +211,7 @@ int main(int argc, char** argv) {
         }
 
         if(argument == "" && argi < argc-1) {
-            argument = argv[argi];
+            argument = argv[argi + 1];
             seperateArgFlag = 1;
         }
 
@@ -222,13 +223,12 @@ int main(int argc, char** argv) {
             };
             auto optFormat = formatStr.find(toLower(argument));
             if(optFormat == formatStr.end()) {
-                printf("Error: Format option %s doesn't exist!", argument.c_str());
-                std::exit(1);
+                return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            options.format = optFormat->second;
+            ret.format = optFormat->second;
             argi += seperateArgFlag;
         } else if(option == "o" || option == "output") {
-            options.outputPath = argument;
+            ret.outputPath = argument;
             argi += seperateArgFlag;
         } else if(option == "d" || option == "debayer") {
             const static std::unordered_map<std::string, DebayerMode> modeStr = {
@@ -238,18 +238,36 @@ int main(int argc, char** argv) {
             };
             auto optMode = modeStr.find(toLower(argument));
             if(optMode == modeStr.end()) {
-                printf("Error: Format option %s doesn't exist!", argument.c_str());
-                std::exit(1);
+                return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            options.debayerMode = optMode->second;
+            ret.debayerMode = optMode->second;
             argi += seperateArgFlag;
         } else {
-            printf("Error: Unknown option (%s)\n", option.c_str());
-            usage(argc, argv, 1);
+            return {{"Error: Unknown option (" + option + ")\n"}};
         }
     }
 
-    processImage(options);
+    return ret;
+}
+
+int main(int argc, char** argv) {
+
+    if(argc < 2) {
+        usage(argc, argv, 1);
+    }
+
+    ErrorOr<Options> options = argparse(argc, argv);
+    if(!options.ok()) {
+        fprintf(stderr, "Error: %s\n", options.error().msg.c_str());
+        usage(argc, argv, 1);
+        return 1;
+    }
+
+    auto error = processImage(options.value());
+    if(!error.ok()) {
+        fprintf(stderr, "Error: %s\n", error.error().msg.c_str());
+        return 1;
+    }
 
     return 0;
 }

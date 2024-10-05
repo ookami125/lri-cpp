@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os, const std::vector<T>& objs)
 {
     os << "[";
     if(objs.size() > 0) os << std::endl;
-    for(int i=0; i<objs.size(); ++i) {
+    for(size_t i=0; i<objs.size(); ++i) {
         auto& obj = objs[i];
         os << obj;
         if(i<objs.size()-1) {

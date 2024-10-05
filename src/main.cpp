@@ -83,7 +83,7 @@ struct LELR_Header {
 #pragma pack(pop)
 
 struct Options {
-    ImageFileFormat format = ImageFileFormat::PGM;
+    ImageFileFormat format = ImageFileFormat::PNG;
     std::string outputPath = "buffers";
     DebayerMode debayerMode = DebayerMode::Interpolate;
     std::vector<std::string> positionalArgs;

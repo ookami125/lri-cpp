@@ -72,7 +72,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
             }
         } break;
         case ImageFileFormat::PNG: {
-            int res = stbi_write_png(path, width, height, channels, data.data(), (int)(width*channels*sizeof(data[0])));
+            int res = stbi_write_png(path, (int)width, (int)height, channels, data.data(), (int)(width*channels*sizeof(data[0])));
             if(res == 0) {
                 fclose(file);
                 return {{"Failed to write PNG ("+std::string(path)+")"}};
@@ -85,7 +85,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 converted.push_back((uint8_t)(c >> 2));
             }
 
-            int res = stbi_write_jpg(path, width, height, channels, converted.data(), 100);
+            int res = stbi_write_jpg(path, (int)width, (int)height, channels, converted.data(), 100);
             if(res == 0) {
                 fclose(file);
                 return {{"Failed to write JPG ("+std::string(path)+")"}};

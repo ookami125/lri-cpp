@@ -225,10 +225,10 @@ ErrorOr<Options> argparse(int argc, char** argv) {
             if(optFormat == formatStr.end()) {
                 return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            options.format = optFormat->second;
+            ret.format = optFormat->second;
             argi += seperateArgFlag;
         } else if(option == "o" || option == "output") {
-            options.outputPath = argument;
+            ret.outputPath = argument;
             argi += seperateArgFlag;
         } else if(option == "d" || option == "debayer") {
             const static std::unordered_map<std::string, DebayerMode> modeStr = {
@@ -240,7 +240,7 @@ ErrorOr<Options> argparse(int argc, char** argv) {
             if(optMode == modeStr.end()) {
                 return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
             }
-            options.debayerMode = optMode->second;
+            ret.debayerMode = optMode->second;
             argi += seperateArgFlag;
         } else {
             return {{"Error: Unknown option (" + option + ")\n"}};

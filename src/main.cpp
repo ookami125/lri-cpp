@@ -128,24 +128,12 @@ ErrorOr<void> processImage(Options opts)
                     "BAYER_JPEG", "?", "?", "?", "?", "?", "?", "PACKED_10BPP", "PACKED_12BPP", "PACKED_14BPP",
                 };
                 
+                Image img = Image();
+
                 switch(surface.format)
                 {
                     case FormatType::RAW_PACKED_10BPP: {
-                        uint8_t bayer = 0;
-                        if(module.sensor_bayer_red_override.has_value()) {
-                            auto bayer_offset = module.sensor_bayer_red_override.value();
-                            bayer = (uint8_t)((bayer_offset.x + 2) % 2);
-                            bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
-                        }
-
-                        Image img = unpackToImage(img_data, 4160, 3120);
-                        if(opts.debayerMode != DebayerMode::None) {
-                            img = debayerImage(&img, bayer, opts.debayerMode);
-                        }
-
-                        char filename_buffer[256];
-                        sprintf(filename_buffer, "%s/%02d-%s.%s", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format], std::to_string(opts.format).c_str());
-                        img.writeToFile(filename_buffer, opts.format);
+                        img = unpackToImage(img_data, surface.size.x*2, surface.size.y*2);
                     } break;
                     case FormatType::RAW_BAYER_JPEG: {
 					    uint32_t bjpg_header_len = 1576;
@@ -191,6 +179,21 @@ ErrorOr<void> processImage(Options opts)
                         printf("[%d]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
                     } break;
                 }
+
+                uint8_t bayer = 0;
+                if(module.sensor_bayer_red_override.has_value()) {
+                    auto bayer_offset = module.sensor_bayer_red_override.value();
+                    bayer = (uint8_t)((bayer_offset.x + 2) % 2);
+                    bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
+                }
+
+                if(opts.debayerMode != DebayerMode::None) {
+                    img = debayerImage(&img, bayer, opts.debayerMode);
+                }
+
+                char filename_buffer[256];
+                sprintf(filename_buffer, "%s/%02d-%s.%s", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format], std::to_string(opts.format).c_str());
+                img.writeToFile(filename_buffer, opts.format);
                 surfaceCount += 1;
             }
         }

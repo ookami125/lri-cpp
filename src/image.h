@@ -14,7 +14,7 @@ enum class ImageFileFormat {
 const static std::unordered_map<ImageFileFormat, std::string> imageFileFormatToString = {
     {ImageFileFormat::PGM, "pgm"},
     {ImageFileFormat::PNG, "png"},
-    {ImageFileFormat::JPEG, "jpeg"},
+    {ImageFileFormat::JPEG, "jpg"},
 };
 
 namespace std {

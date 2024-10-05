@@ -13,7 +13,7 @@ struct ROI {
     /*3*/ std::optional<float> confidence;
 
     ROI(picoproto::Message* message) :
-        id (ToOptional(message->GetUInt64Array(1))),
+        id (ToOptional(message->GetUInt32Array(1))),
         roi (ToOptional<RectangleI>(message->GetMessageArray(1))),
         confidence (ToOptional(message->GetFloatArray(1)))
     {}

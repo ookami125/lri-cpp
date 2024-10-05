@@ -22,7 +22,7 @@ int clamp(int val, int min, int max) {
 uint16_t Image::getColor(int x, int y, int c) {
     int xc = clamp(x, 0, (int32_t)width-1);
     int yc = clamp(y, 0, (int32_t)height-1);
-    return data[(size_t)((xc+yc*(int32_t)width)*3+c)];
+    return data[(size_t)((xc+yc*(int32_t)width)*channels+c)];
 };
 
 uint16_t Image::getColorOrMirror(int x, int y, int c) {
@@ -31,13 +31,13 @@ uint16_t Image::getColorOrMirror(int x, int y, int c) {
     // Stupid math to mirror the image
     x = w-abs(abs(x)%(w*2)-w);
     y = h-abs(abs(y)%(h*2)-h);
-    return data[(size_t)((x+y*(int32_t)width)*3+c)];
+    return data[(size_t)((x+y*(int32_t)width)*channels+c)];
 };
 
 void Image::setColor(int x, int y, int chan, uint16_t color) {
     int xc = clamp(x, 0, (int32_t)width-1);
     int yc = clamp(y, 0, (int32_t)height-1);
-    data[(size_t)((xc+yc*(int32_t)width)*3+chan)] = color;
+    data[(size_t)((xc+yc*(int32_t)width)*channels+chan)] = color;
 }
 
 ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {

@@ -421,7 +421,7 @@ std::vector<uint64_t> Message::GetUInt64Array(int32_t number) {
       size_t remaining = data_info.second;
       while (remaining > 0) {
         const uint64_t varint = ReadVarInt(&current, &remaining);
-        result.push_back(static_cast<int64_t>(varint));
+        result.push_back(varint);
       }
     }
   } else {

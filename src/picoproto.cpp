@@ -207,17 +207,17 @@ bool Message::ParseFromBytes(uint8_t* bytes, size_t bytes_size) {
     ReadWireTypeAndFieldNumber(&current, &remaining, &wire_type, &field_number);
     switch (wire_type) {
       case WIRETYPE_VARINT: {
-        Field* field = AddField(field_number, FIELD_UINT64);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT64);
         const uint64_t varint = ReadVarInt(&current, &remaining);
         field->value.v_uint64->push_back(varint);
       } break;
       case WIRETYPE_64BIT: {
-        Field* field = AddField(field_number, FIELD_UINT64);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT64);
         const uint64_t value = ReadFromBytes<uint64_t>(&current, &remaining);
         field->value.v_uint64->push_back(value);
       } break;
       case WIRETYPE_LENGTH_DELIMITED: {
-        Field* field = AddField(field_number, FIELD_BYTES);
+        Field* field = AddField((int32_t)field_number, FIELD_BYTES);
         const uint64_t size = ReadVarInt(&current, &remaining);
         uint8_t* data;
         if (copy_arrays) {
@@ -242,7 +242,7 @@ bool Message::ParseFromBytes(uint8_t* bytes, size_t bytes_size) {
         PP_LOG(ERROR) << "Unhandled wire type encountered";
       } break;
       case WIRETYPE_32BIT: {
-        Field* field = AddField(field_number, FIELD_UINT32);
+        Field* field = AddField((int32_t)field_number, FIELD_UINT32);
         const uint32_t value = ReadFromBytes<uint32_t>(&current, &remaining);
         field->value.v_uint32->push_back(value);
       } break;
@@ -287,7 +287,7 @@ int32_t Message::GetInt32(int32_t number) {
   Field* field = GetFieldAndCheckType(number, FIELD_UINT32);
   uint32_t first_value = (*(field->value.v_uint32))[0];
   int32_t zig_zag_decoded =
-    static_cast<int32_t>((first_value >> 1) ^ (-bit_cast<int32_t>(first_value & 1)));
+    static_cast<int32_t>((first_value >> 1) ^ bit_cast<uint32_t>(-bit_cast<int32_t>(first_value & 1)));
   return zig_zag_decoded;
 }
 
@@ -295,7 +295,7 @@ int64_t Message::GetInt64(int32_t number) {
   Field* field = GetFieldAndCheckType(number, FIELD_UINT64);
   uint64_t first_value = (*(field->value.v_uint64))[0];
   int64_t zig_zag_decoded =
-    static_cast<int64_t>((first_value >> 1) ^ (-bit_cast<int64_t>(first_value & 1)));
+    static_cast<int64_t>((first_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(first_value & 1)));
   return zig_zag_decoded;
 }
 
@@ -375,7 +375,7 @@ std::vector<int32_t> Message::GetInt32Array(int32_t number) {
   std::vector<int32_t> result;
   for (uint64_t raw_value : raw_array) {
     int32_t zig_zag_decoded =
-      static_cast<int32_t>((raw_value >> 1) ^ (-bit_cast<int64_t>(raw_value & 1)));
+      static_cast<int32_t>((raw_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(raw_value & 1)));
     result.push_back(zig_zag_decoded);
   }
   return result;
@@ -386,7 +386,7 @@ std::vector<int64_t> Message::GetInt64Array(int32_t number) {
   std::vector<int64_t> result;
   for (uint64_t raw_value : raw_array) {
     int64_t zig_zag_decoded =
-      static_cast<int64_t>((raw_value >> 1) ^ (-bit_cast<int64_t>(raw_value & 1)));
+      static_cast<int64_t>((raw_value >> 1) ^ bit_cast<uint64_t>(-bit_cast<int64_t>(raw_value & 1)));
     result.push_back(zig_zag_decoded);
   }
   return result;

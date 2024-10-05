@@ -22,7 +22,7 @@ int clamp(int val, int min, int max) {
 uint16_t Image::getColor(int x, int y, int c) {
     int xc = clamp(x, 0, (int32_t)width-1);
     int yc = clamp(y, 0, (int32_t)height-1);
-    return data[(xc+yc*(int32_t)width)*3+c];
+    return data[(size_t)((xc+yc*(int32_t)width)*3+c)];
 };
 
 uint16_t Image::getColorOrMirror(int x, int y, int c) {
@@ -31,13 +31,13 @@ uint16_t Image::getColorOrMirror(int x, int y, int c) {
     // Stupid math to mirror the image
     x = w-abs(abs(x)%(w*2)-w);
     y = h-abs(abs(y)%(h*2)-h);
-    return data[(x+y*(int32_t)width)*3+c];
+    return data[(size_t)((x+y*(int32_t)width)*3+c)];
 };
 
 void Image::setColor(int x, int y, int chan, uint16_t color) {
     int xc = clamp(x, 0, (int32_t)width-1);
     int yc = clamp(y, 0, (int32_t)height-1);
-    data[(xc+yc*(int32_t)width)*3+chan] = color;
+    data[(size_t)((xc+yc*(int32_t)width)*3+chan)] = color;
 }
 
 ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
@@ -60,7 +60,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
 
             for(uint32_t y=0; y<height; ++y) {
                 for(uint32_t x=0; x<width; ++x) {
-                    uint16_t* pixel = &data[(x+y*(int32_t)width) * channels];
+                    uint16_t* pixel = &data[(x+y*width) * channels];
                     for(int channel=0; channel<channels; channel++) {
                         fprintf(file, "%d ", pixel[channel]);
                     }

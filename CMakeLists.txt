@@ -8,12 +8,15 @@ if(MSVC)
     add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 endif()
 
+include_directories(SYSTEM src/ext)
+
 add_executable(lri_extractor
     src/main.cpp
     src/image.cpp
     src/debayer.cpp
     src/picoproto.cpp
     src/utils.cpp
+    src/stb_image.cpp
 )
 
 if(MSVC)

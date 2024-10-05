@@ -7,6 +7,8 @@
 #include <optional>
 #include <unordered_map>
 
+#include <stb_image.h>
+
 #include "image.h"
 #include "debayer.h"
 #include "utils.h"
@@ -120,33 +122,74 @@ ErrorOr<void> processImage(Options opts)
             for(auto module : lightHeader.modules)
             {
                 Surface surface = module.sensor_data_surface;
-                uint8_t* data_offset = (uint8_t*)header + surface.data_offset;
+                uint8_t* img_data = (uint8_t*)header + surface.data_offset;
                 
                 const char* surfaceFormats[] = {
                     "BAYER_JPEG", "?", "?", "?", "?", "?", "?", "PACKED_10BPP", "PACKED_12BPP", "PACKED_14BPP",
                 };
                 
-                if(surface.format == FormatType::RAW_PACKED_10BPP)
+                switch(surface.format)
                 {
-                    uint8_t bayer = 0;
-                    if(module.sensor_bayer_red_override.has_value()) {
-                        auto bayer_offset = module.sensor_bayer_red_override.value();
-                        bayer = (uint8_t)((bayer_offset.x + 2) % 2);
-                        bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
-                    }
+                    case FormatType::RAW_PACKED_10BPP: {
+                        uint8_t bayer = 0;
+                        if(module.sensor_bayer_red_override.has_value()) {
+                            auto bayer_offset = module.sensor_bayer_red_override.value();
+                            bayer = (uint8_t)((bayer_offset.x + 2) % 2);
+                            bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
+                        }
 
-                    char filename_buffer[256];
-                    sprintf(filename_buffer, "%s/%02d-%s.pgm", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format]);
-                    Image img = unpackToImage(data_offset, 4160, 3120);
+                        Image img = unpackToImage(img_data, 4160, 3120);
+                        if(opts.debayerMode != DebayerMode::None) {
+                            img = debayerImage(&img, bayer, opts.debayerMode);
+                        }
 
-                    if(opts.debayerMode != DebayerMode::None) {
-                        img = debayerImage(&img, bayer, opts.debayerMode);
-                    }
+                        char filename_buffer[256];
+                        sprintf(filename_buffer, "%s/%02d-%s.%s", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format], std::to_string(opts.format).c_str());
+                        img.writeToFile(filename_buffer, opts.format);
+                    } break;
+                    case FormatType::RAW_BAYER_JPEG: {
+					    uint32_t bjpg_header_len = 1576;
+					    uint32_t format = *(uint32_t*)(&img_data[4]);
 
-                    img.writeToFile(filename_buffer, opts.format);
-                }
-                else {
-                    printf("[%d]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
+                        printf("BayerJPEG: %d format\n", format);
+                        
+                        uint32_t jpeg0_len = *(uint32_t*)(&img_data[8]);
+					    uint32_t jpeg1_len = *(uint32_t*)(&img_data[12]);
+					    uint32_t jpeg2_len = *(uint32_t*)(&img_data[16]);
+					    uint32_t jpeg3_len = *(uint32_t*)(&img_data[20]);
+
+                        uint32_t jpeg_len[4] = {
+                            jpeg0_len,
+                            jpeg1_len,
+                            jpeg2_len,
+                            jpeg3_len,
+                        };
+
+                        uint8_t* jpeg0_offset = &img_data[bjpg_header_len];
+                        uint8_t* jpeg1_offset = &jpeg0_offset[jpeg0_len];
+                        uint8_t* jpeg2_offset = &jpeg1_offset[jpeg1_len];
+                        uint8_t* jpeg3_offset = &jpeg2_offset[jpeg2_len];
+
+                        uint8_t* jpeg_offset[4] = {
+                            jpeg0_offset,
+                            jpeg1_offset,
+                            jpeg2_offset,
+                            jpeg3_offset,
+                        };
+
+                        uint32_t jpegCount = format ? 1 : 4;
+                        for(uint32_t jpegId = 0; jpegId < jpegCount; jpegId++)
+                        {
+                            char filename_buffer[256];
+                            sprintf(filename_buffer, "%s/%02d-%1d-%s.jpg", opts.outputPath.c_str(), surfaceCount, jpegId, surfaceFormats[surface.format]);
+                            FILE* file = fopen(filename_buffer, "wb");
+                            fwrite(jpeg_offset[jpegId], jpeg_len[jpegId], 1, file);
+                            fclose(file);
+                        }
+                    } break;
+                    default: {
+                        printf("[%d]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
+                    } break;
                 }
                 surfaceCount += 1;
             }
@@ -172,7 +215,7 @@ void usage(int argc, char** argv, int exit_code)
     printf("\n");
     printf("Options:\n");
     printf("  -h --help     Show this screen.\n");
-    printf("  -f --format   Output format [default: PGM] (PGM)\n");
+    printf("  -f --format   Output format [default: PNG] (PGM,PNG,JPEG)\n");
     printf("  -o --output   Output path [default: \"buffers\"]\n");
     printf("  -d --debayer  Debayering mode [default: Interpolated] (None, Filter, Interpolated)\n");
 
@@ -220,10 +263,13 @@ ErrorOr<Options> argparse(int argc, char** argv) {
         } else if(option == "f" || option == "format") {
             const static std::unordered_map<std::string, ImageFileFormat> formatStr = {
                 {"pgm", ImageFileFormat::PGM},
+                {"png", ImageFileFormat::PNG},
+                {"jpg", ImageFileFormat::JPEG},
+                {"jpeg", ImageFileFormat::JPEG},
             };
             auto optFormat = formatStr.find(toLower(argument));
             if(optFormat == formatStr.end()) {
-                return {{ "Error: Format option (" + argument + ") doesn't exist!"}};
+                return {{ "Format option (" + argument + ") doesn't exist!"}};
             }
             ret.format = optFormat->second;
             argi += seperateArgFlag;
@@ -235,6 +281,7 @@ ErrorOr<Options> argparse(int argc, char** argv) {
                 {"none", DebayerMode::None},
                 {"filter", DebayerMode::Filter},
                 {"interpolate", DebayerMode::Interpolate},
+                {"interpolated", DebayerMode::Interpolate},
             };
             auto optMode = modeStr.find(toLower(argument));
             if(optMode == modeStr.end()) {

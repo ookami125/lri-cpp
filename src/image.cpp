@@ -1,7 +1,10 @@
 #include "image.h"
 #include <algorithm>
 #include <stdio.h>
+#include <string.h>
 #include "error.h"
+
+#include <stb_image_write.h>
 
 Image::Image(uint32_t width, uint32_t height, uint8_t channels) :
     width(width), height(height), channels(channels)
@@ -53,7 +56,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 fprintf(file, "P3\n");
             else {
                 fclose(file);
-                return {{"Error: invalid number of channels for PGM file format!"}};
+                return {{"invalid number of channels for PGM file format!"}};
             }
 
             fprintf(file, "%d %d\n%d\n", width, height, max);
@@ -68,6 +71,29 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 fprintf(file, "\n");
             }
         } break;
+        case ImageFileFormat::PNG: {
+            int res = stbi_write_png(path, width, height, channels, data.data(), (int)(width*channels*sizeof(data[0])));
+            if(res == 0) {
+                fclose(file);
+                return {{"Failed to write PNG ("+std::string(path)+")"}};
+            }
+        } break;
+        case ImageFileFormat::JPEG: {
+            std::vector<uint8_t> converted = {};
+            converted.reserve(width*height*channels);
+            for(uint16_t c : data) {
+                converted.push_back((uint8_t)(c >> 2));
+            }
+
+            int res = stbi_write_jpg(path, width, height, channels, converted.data(), 100);
+            if(res == 0) {
+                fclose(file);
+                return {{"Failed to write JPG ("+std::string(path)+")"}};
+            }
+        } break;
+        default: {
+            return {{"Unimplemented ImageFileFormat ("+std::to_string((uint32_t)format)+")"}};
+        }
     }
     fclose(file);
     

@@ -47,13 +47,13 @@ struct BitReader {
     }
 };
 
-Image unpackToImage(const uint8_t* data, size_t width, size_t height, uint8_t bayerPattern) {
+Image unpackToImage(const uint8_t* data, size_t width, size_t height) {
     BitReader reader = BitReader(data, (width*height*10+9)/16 * 2);
 
     Image image = Image(width, height, 1);
 
-    for(int y=0; y<height; ++y) {
-        for(int x=0; x<width; ++x) {
+    for(size_t y=0; y<height; ++y) {
+        for(size_t x=0; x<width; ++x) {
             uint16_t bits;
             if(!reader.getNext10BitValue(bits)) { return image; }
             image.data[x+y*width] = bits;
@@ -100,7 +100,7 @@ void processImage(Options opts)
     int surfaceCount = 0;
     
     LELR_Header* header = (LELR_Header*)nullptr;
-    for(uint8_t* offset = data; offset - data < length; offset += header->block_length)
+    for(uint8_t* offset = data; (size_t)(offset - data) < length; offset += header->block_length)
     {
         header = (LELR_Header*)offset;
 
@@ -125,8 +125,6 @@ void processImage(Options opts)
                 
                 if(surface.format == FormatType::RAW_PACKED_10BPP)
                 {
-                    size_t length = surface.size.y * surface.row_stride;
-                    
                     uint8_t bayer = 0;
                     if(module.sensor_bayer_red_override.has_value()) {
                         auto bayer_offset = module.sensor_bayer_red_override.value();
@@ -136,7 +134,7 @@ void processImage(Options opts)
 
                     char filename_buffer[256];
                     sprintf(filename_buffer, "%s/%02d-%s.pgm", opts.outputPath.c_str(), surfaceCount, surfaceFormats[surface.format]);
-                    Image img = unpackToImage(data_offset, 4160, 3120, bayer);
+                    Image img = unpackToImage(data_offset, 4160, 3120);
 
                     if(opts.debayerMode != DebayerMode::None) {
                         img = debayerImage(&img, bayer, opts.debayerMode);
@@ -145,7 +143,7 @@ void processImage(Options opts)
                     img.writeToFile(filename_buffer, opts.format);
                 }
                 else {
-                    printf("[%s ]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
+                    printf("[%d]Surface Format (%s) not implemented!\n", surfaceCount, surfaceFormats[surface.format]);
                 }
                 surfaceCount += 1;
             }

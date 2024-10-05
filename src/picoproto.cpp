@@ -535,7 +535,7 @@ std::vector<Message*> Message::GetMessageArray(int32_t number) {
     return result;
   }
   if (field->type == FIELD_BYTES) {
-    for (int i = 0; i < field->value.v_bytes->size(); ++i) {
+    for (size_t i = 0; i < field->value.v_bytes->size(); ++i) {
       Message* cached_message = field->cached_messages->at(i);
       if (!cached_message) {
         std::pair<uint8_t*, size_t> value = field->value.v_bytes->at(i);

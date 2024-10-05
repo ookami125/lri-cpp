@@ -42,27 +42,32 @@ void Image::setColor(int x, int y, int chan, uint16_t color) {
 void Image::writeToFile(const char* path, ImageFileFormat format) {
     const uint16_t max = 1023;
     FILE* file = fopen(path, "wb");
-    if(channels == 1)
-        fprintf(file, "P2\n");
-    else if (channels == 3)
-        fprintf(file, "P3\n");
-    else {
-        fclose(file);
-        fprintf(stderr, "Error: invalid number of channels for PGM file format!");
-        return;
-    }
 
-    fprintf(file, "%d %d\n%d\n", width, height, max);
+    switch(format) {
+        case ImageFileFormat::PGM: {
 
-    size_t offset = 0;
-    for(int y=0; y<height; ++y) {
-        for(int x=0; x<width; ++x) {
-            uint16_t* pixel = &data[(x+y*width) * channels];
-            for(int channel=0; channel<channels; channel++) {
-                fprintf(file, "%d ", pixel[channel]);
+            if(channels == 1)
+                fprintf(file, "P2\n");
+            else if (channels == 3)
+                fprintf(file, "P3\n");
+            else {
+                fclose(file);
+                fprintf(stderr, "Error: invalid number of channels for PGM file format!");
+                return;
             }
-        }
-        fprintf(file, "\n");
+
+            fprintf(file, "%zu %zu\n%d\n", width, height, max);
+
+            for(size_t y=0; y<height; ++y) {
+                for(size_t x=0; x<width; ++x) {
+                    uint16_t* pixel = &data[(x+y*width) * channels];
+                    for(int channel=0; channel<channels; channel++) {
+                        fprintf(file, "%d ", pixel[channel]);
+                    }
+                }
+                fprintf(file, "\n");
+            }
+        } break;
     }
     fclose(file);
 }

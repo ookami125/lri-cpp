@@ -14,3 +14,9 @@ add_executable(lri_extractor
     src/debayer.cpp
     src/picoproto.cpp
 )
+
+if(MSVC)
+  target_compile_options(lri_extractor PRIVATE /W4 /WX)
+else()
+  target_compile_options(lri_extractor PRIVATE -Wall -Wextra -Wpedantic -Werror)
+endif()

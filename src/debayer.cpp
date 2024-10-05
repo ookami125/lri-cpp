@@ -23,8 +23,8 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
 
     // Pull out RGB values into their seperate channels
     Image image = Image(srcImage->width, srcImage->height, 3);
-    for(int y=0; y<srcImage->height; ++y) {
-        for(int x=0; x<srcImage->width; ++x) {
+    for(size_t y=0; y<srcImage->height; ++y) {
+        for(size_t x=0; x<srcImage->width; ++x) {
             char id = map[((y%2)<<1) | x%2];
             image.data[(x+y*image.width)*3+id] = srcImage->data[x+y*srcImage->width];
         }
@@ -38,8 +38,8 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
         case DebayerMode::Interpolate: {
             //Interpolate RGB values to other pixels
             Image debayeredImage = image;
-            for(int y=0; y<image.height; y++) {
-                for(int x=0; x<image.width; x++) {
+            for(size_t y=0; y<image.height; y++) {
+                for(size_t x=0; x<image.width; x++) {
                     char id = map[((y%2)<<1) | x % 2];
                     switch(id) {
                         case R: {

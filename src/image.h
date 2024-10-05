@@ -2,6 +2,7 @@
 #include <stdint.h>
 #include <string.h>
 #include <vector>
+#include "error.h"
 
 enum class ImageFileFormat {
     PGM
@@ -19,5 +20,5 @@ struct Image {
     uint16_t getColorOrMirror(int x, int y, int c);
     void setColor(int x, int y, int chan, uint16_t color);
 
-    void writeToFile(const char* path, ImageFileFormat format);
+    ErrorOr<void> writeToFile(const char* path, ImageFileFormat format);
 };

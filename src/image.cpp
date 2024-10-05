@@ -1,6 +1,7 @@
 #include "image.h"
 #include <algorithm>
 #include <stdio.h>
+#include "error.h"
 
 Image::Image(size_t width, size_t height, uint8_t channels) :
     width(width), height(height), channels(channels)
@@ -39,7 +40,7 @@ void Image::setColor(int x, int y, int chan, uint16_t color) {
     data[(xc+yc*width)*3+chan] = color;
 }
 
-void Image::writeToFile(const char* path, ImageFileFormat format) {
+ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
     const uint16_t max = 1023;
     FILE* file = fopen(path, "wb");
 
@@ -52,8 +53,7 @@ void Image::writeToFile(const char* path, ImageFileFormat format) {
                 fprintf(file, "P3\n");
             else {
                 fclose(file);
-                fprintf(stderr, "Error: invalid number of channels for PGM file format!");
-                return;
+                return {{"Error: invalid number of channels for PGM file format!"}};
             }
 
             fprintf(file, "%zu %zu\n%d\n", width, height, max);
@@ -70,4 +70,6 @@ void Image::writeToFile(const char* path, ImageFileFormat format) {
         } break;
     }
     fclose(file);
+    
+    return {};
 }

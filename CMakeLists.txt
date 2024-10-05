@@ -13,6 +13,7 @@ add_executable(lri_extractor
     src/image.cpp
     src/debayer.cpp
     src/picoproto.cpp
+    src/utils.cpp
 )
 
 if(MSVC)

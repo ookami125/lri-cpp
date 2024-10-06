@@ -1,8 +1,11 @@
 #include "image.h"
+
 #include <algorithm>
 #include <stdio.h>
 #include <string.h>
+
 #include "error.h"
+#include "utils.h"
 
 #include <stb_image_write.h>
 
@@ -43,6 +46,11 @@ void Image::setColor(int x, int y, int chan, uint16_t color) {
     data[(size_t)((xc+yc*(int32_t)width)*channels+chan)] = color;
 }
 
+void file_writer(void *context, void *data, int size) {
+    FILE* file = (FILE*)context;
+    fwrite(data, size, 1, file);
+}
+
 ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
     const uint16_t max = 1023;
     FILE* file = fopen(path, "wb");
@@ -78,7 +86,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 converted.push_back((uint8_t)(c >> 2));
             }
 
-            int res = stbi_write_png(path, (int)width, (int)height, channels, converted.data(), (int)(width*channels));
+            int res = stbi_write_png_to_func(file_writer, (void*)file, (int)width, (int)height, channels, converted.data(), (int)(width*channels));
             if(res == 0) {
                 fclose(file);
                 return {{"Failed to write PNG ("+std::string(path)+")"}};
@@ -91,7 +99,7 @@ ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {
                 converted.push_back((uint8_t)(c >> 2));
             }
 
-            int res = stbi_write_jpg(path, (int)width, (int)height, channels, converted.data(), 100);
+            int res = stbi_write_jpg_to_func(file_writer, (void*)file, (int)width, (int)height, channels, converted.data(), 100);
             if(res == 0) {
                 fclose(file);
                 return {{"Failed to write JPG ("+std::string(path)+")"}};

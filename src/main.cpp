@@ -89,6 +89,13 @@ struct Options {
     std::vector<std::string> positionalArgs;
 };
 
+
+void cpy2img(Image& img, stbi_uc* data) {
+    for(size_t i=0; i<img.data.size(); ++i) {
+        img.data[i] = data[i];
+    }
+}
+
 ErrorOr<void> processImage(Options opts)
 {
     if(opts.positionalArgs.size() == 0) {
@@ -130,49 +137,63 @@ ErrorOr<void> processImage(Options opts)
                 
                 Image img = Image();
 
+                bool imgIsGrayscale = false;
+
                 switch(surface.format)
                 {
                     case FormatType::RAW_PACKED_10BPP: {
-                        img = unpackToImage(img_data, surface.size.x*2, surface.size.y*2);
+                        img = unpackToImage(img_data, (uint32_t)(surface.size.x*2), (uint32_t)(surface.size.y*2));
                     } break;
                     case FormatType::RAW_BAYER_JPEG: {
 					    uint32_t bjpg_header_len = 1576;
 					    uint32_t format = *(uint32_t*)(&img_data[4]);
-
-                        printf("BayerJPEG: %d format\n", format);
                         
                         uint32_t jpeg0_len = *(uint32_t*)(&img_data[8]);
 					    uint32_t jpeg1_len = *(uint32_t*)(&img_data[12]);
 					    uint32_t jpeg2_len = *(uint32_t*)(&img_data[16]);
 					    uint32_t jpeg3_len = *(uint32_t*)(&img_data[20]);
 
-                        uint32_t jpeg_len[4] = {
-                            jpeg0_len,
-                            jpeg1_len,
-                            jpeg2_len,
-                            jpeg3_len,
-                        };
-
                         uint8_t* jpeg0_offset = &img_data[bjpg_header_len];
                         uint8_t* jpeg1_offset = &jpeg0_offset[jpeg0_len];
                         uint8_t* jpeg2_offset = &jpeg1_offset[jpeg1_len];
                         uint8_t* jpeg3_offset = &jpeg2_offset[jpeg2_len];
 
-                        uint8_t* jpeg_offset[4] = {
-                            jpeg0_offset,
-                            jpeg1_offset,
-                            jpeg2_offset,
-                            jpeg3_offset,
-                        };
+                        if(format == 1) {
+                            int width, height, channels;
+                            stbi_uc* data1 = stbi_load_from_memory(jpeg0_offset, jpeg0_len, &width, &height, &channels, 0);
+                            img = Image(width, height, (uint8_t)channels);
+                            cpy2img(img, data1);
+                            imgIsGrayscale = true;
+                        } else {
+                            int width, height, channels;
+                            stbi_uc* data1 = stbi_load_from_memory(jpeg0_offset, jpeg0_len, &width, &height, &channels, 0);
+                            Image img1 = Image(width, height, (uint8_t)channels);
+                            cpy2img(img1, data1);
 
-                        uint32_t jpegCount = format ? 1 : 4;
-                        for(uint32_t jpegId = 0; jpegId < jpegCount; jpegId++)
-                        {
-                            char filename_buffer[256];
-                            sprintf(filename_buffer, "%s/%02d-%1d-%s.jpg", opts.outputPath.c_str(), surfaceCount, jpegId, surfaceFormats[surface.format]);
-                            FILE* file = fopen(filename_buffer, "wb");
-                            fwrite(jpeg_offset[jpegId], jpeg_len[jpegId], 1, file);
-                            fclose(file);
+                            stbi_uc* data2 = stbi_load_from_memory(jpeg1_offset, jpeg1_len, &width, &height, &channels, 0);
+                            Image img2 = Image(width, height, (uint8_t)channels);
+                            cpy2img(img2, data2);
+
+                            stbi_uc* data3 = stbi_load_from_memory(jpeg2_offset, jpeg2_len, &width, &height, &channels, 0);
+                            Image img3 = Image(width, height, (uint8_t)channels);
+                            cpy2img(img3, data3);
+
+                            stbi_uc* data4 = stbi_load_from_memory(jpeg3_offset, jpeg3_len, &width, &height, &channels, 0);
+                            Image img4 = Image(width, height, (uint8_t)channels);
+                            cpy2img(img4, data4);
+                            
+                            img = Image(width*2, height*2, (uint8_t)channels);
+
+                            for(int y=0; y<height; y++) {
+                                for(int x=0; x<width; x++) {
+                                    for(int c=0; c<channels; c++) {
+                                        img.setColor(x*2+0, y*2+0, c, img1.getColor(x,y,c));
+                                        img.setColor(x*2+1, y*2+0, c, img2.getColor(x,y,c));
+                                        img.setColor(x*2+0, y*2+1, c, img3.getColor(x,y,c));
+                                        img.setColor(x*2+1, y*2+1, c, img4.getColor(x,y,c));
+                                    }
+                                }
+                            }
                         }
                     } break;
                     default: {
@@ -180,15 +201,18 @@ ErrorOr<void> processImage(Options opts)
                     } break;
                 }
 
-                uint8_t bayer = 0;
-                if(module.sensor_bayer_red_override.has_value()) {
-                    auto bayer_offset = module.sensor_bayer_red_override.value();
-                    bayer = (uint8_t)((bayer_offset.x + 2) % 2);
-                    bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
-                }
+                if(!imgIsGrayscale)
+                {
+                    uint8_t bayer = 0;
+                    if(module.sensor_bayer_red_override.has_value()) {
+                        auto bayer_offset = module.sensor_bayer_red_override.value();
+                        bayer = (uint8_t)((bayer_offset.x + 2) % 2);
+                        bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
+                    }
 
-                if(opts.debayerMode != DebayerMode::None) {
-                    img = debayerImage(&img, bayer, opts.debayerMode);
+                    if(opts.debayerMode != DebayerMode::None) {
+                        img = debayerImage(&img, bayer, opts.debayerMode);
+                    }
                 }
 
                 char filename_buffer[256];

@@ -16,3 +16,4 @@ inline std::string toLower(std::string str) {
 }
 
 ErrorOr<char*> loadFile(const char* path, size_t& length);
+ErrorOr<void> writeFile(const char* path, const char* data, size_t length);

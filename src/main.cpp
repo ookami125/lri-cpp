@@ -182,7 +182,7 @@ ErrorOr<void> processImage(Options opts)
                             Image img4 = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img4, data4);
                             
-                            img = Image((int)width*2, (int)height*2, (uint8_t)channels);
+                            img = Image((uint32_t)width*2, (uint32_t)height*2, (uint8_t)channels);
 
                             for(int y=0; y<height; y++) {
                                 for(int x=0; x<width; x++) {

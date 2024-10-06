@@ -161,25 +161,25 @@ ErrorOr<void> processImage(Options opts)
                         if(format == 1) {
                             int width, height, channels;
                             stbi_uc* data1 = stbi_load_from_memory(jpeg0_offset, (int)jpeg0_len, &width, &height, &channels, 0);
-                            img = Image((int)width, (int)height, (uint8_t)channels);
+                            img = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img, data1);
                             imgIsGrayscale = true;
                         } else {
                             int width, height, channels;
                             stbi_uc* data1 = stbi_load_from_memory(jpeg0_offset, (int)jpeg0_len, &width, &height, &channels, 0);
-                            Image img1 = Image((int)width, (int)height, (uint8_t)channels);
+                            Image img1 = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img1, data1);
 
                             stbi_uc* data2 = stbi_load_from_memory(jpeg1_offset, (int)jpeg1_len, &width, &height, &channels, 0);
-                            Image img2 = Image((int)width, (int)height, (uint8_t)channels);
+                            Image img2 = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img2, data2);
 
                             stbi_uc* data3 = stbi_load_from_memory(jpeg2_offset, (int)jpeg2_len, &width, &height, &channels, 0);
-                            Image img3 = Image((int)width, (int)height, (uint8_t)channels);
+                            Image img3 = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img3, data3);
 
                             stbi_uc* data4 = stbi_load_from_memory(jpeg3_offset, (int)jpeg3_len, &width, &height, &channels, 0);
-                            Image img4 = Image((int)width, (int)height, (uint8_t)channels);
+                            Image img4 = Image((uint32_t)width, (uint32_t)height, (uint8_t)channels);
                             cpy2img(img4, data4);
                             
                             img = Image((int)width*2, (int)height*2, (uint8_t)channels);

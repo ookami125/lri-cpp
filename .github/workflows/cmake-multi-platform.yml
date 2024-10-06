@@ -68,13 +68,10 @@ jobs:
       # Build your program with the given configuration. Note that --config is needed because the default Windows generator is a multi-config generator (Visual Studio generator).
       run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config ${{ matrix.build_type }}
 
-    - name: Test
-      run: ls -la "${{ steps.strings.outputs.build-output-dir }}/${{ matrix.build_type }}/" "${{ github.workspace }}/build/${{ matrix.build_type }}/"
-
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
         name: lri_extractor-${{ matrix.os }}-${{ matrix.version }}
         path: |
-          ${{ steps.strings.outputs.build-output-dir }}/${{ matrix.build_type }}/lri_extractor
+          ${{ steps.strings.outputs.build-output-dir }}/lri_extractor
           ${{ github.workspace }}/build/${{ matrix.build_type }}/lri_extractor.exe

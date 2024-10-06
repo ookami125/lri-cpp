@@ -71,7 +71,7 @@ jobs:
     - name: Upload
       uses: actions/upload-artifact@v4
       with:
-        name: lri_extractor-${{ matrix.os }}-${{ matrix.cpp_compiler }}
+        name: lri_extractor-${{ matrix.os }}-${{ matrix.c_compiler }}
         path: |
           ${{ steps.strings.outputs.build-output-dir }}/lri_extractor
           ${{ github.workspace }}/build/${{ matrix.build_type }}/lri_extractor.exe

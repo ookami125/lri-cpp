@@ -48,7 +48,7 @@ void Image::setColor(int x, int y, int chan, uint16_t color) {
 
 void file_writer(void *context, void *data, int size) {
     FILE* file = (FILE*)context;
-    fwrite(data, size, 1, file);
+    fwrite(data, (size_t)size, 1, file);
 }
 
 ErrorOr<void> Image::writeToFile(const char* path, ImageFileFormat format) {

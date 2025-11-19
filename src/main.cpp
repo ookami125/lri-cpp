@@ -85,7 +85,7 @@ struct LELR_Header {
 struct Options {
     ImageFileFormat format = ImageFileFormat::PNG;
     std::string outputPath = "buffers";
-    DebayerMode debayerMode = DebayerMode::Interpolate;
+    DemosaicMode debayerMode = DemosaicMode::Interpolate;
     std::vector<std::string> positionalArgs;
 };
 
@@ -210,7 +210,7 @@ ErrorOr<void> processImage(Options opts)
                         bayer |= (uint8_t)(((bayer_offset.y + 2) % 2) << 1);
                     }
 
-                    if(opts.debayerMode != DebayerMode::None) {
+                    if(opts.debayerMode != DemosaicMode::None) {
                         img = debayerImage(&img, bayer, opts.debayerMode);
                     }
                 }
@@ -244,7 +244,7 @@ void usage(int argc, char** argv, int exit_code)
     printf("  -h --help     Show this screen.\n");
     printf("  -f --format   Output format [default: PNG] (PGM,PNG,JPEG)\n");
     printf("  -o --output   Output path [default: \"buffers\"]\n");
-    printf("  -d --debayer  Debayering mode [default: Interpolated] (None, Filter, Interpolated)\n");
+    printf("  -d --demosaic  Demosaic mode [default: Interpolated] (None, Photosite, Interpolated, WhiteBalance)\n");
 
     std::exit(exit_code);
 }
@@ -303,12 +303,13 @@ ErrorOr<Options> argparse(int argc, char** argv) {
         } else if(option == "o" || option == "output") {
             ret.outputPath = argument;
             argi += seperateArgFlag;
-        } else if(option == "d" || option == "debayer") {
-            const static std::unordered_map<std::string, DebayerMode> modeStr = {
-                {"none", DebayerMode::None},
-                {"filter", DebayerMode::Filter},
-                {"interpolate", DebayerMode::Interpolate},
-                {"interpolated", DebayerMode::Interpolate},
+        } else if(option == "d" || option == "demosaic") {
+            const static std::unordered_map<std::string, DemosaicMode> modeStr = {
+                {"none", DemosaicMode::None},
+                {"photosite", DemosaicMode::Photosite},
+                {"interpolate", DemosaicMode::Interpolate},
+                {"interpolated", DemosaicMode::Interpolate},
+                {"whitebalance", DemosaicMode::WhiteBalance},
             };
             auto optMode = modeStr.find(toLower(argument));
             if(optMode == modeStr.end()) {

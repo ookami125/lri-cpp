@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import sys
+from PIL import Image
 from pathlib import Path
 
 def blur_edges(image, border_width):
@@ -17,24 +18,96 @@ def blur_edges(image, border_width):
     image[:,:,3] = cv2.GaussianBlur(image[:,:,3], (border_width * 2 - 1, border_width * 2 - 1), 0)
     return image
 
+def generate_gaussian_pyramid(image, levels):
+    gaussian_pyramid = [image]
+
+    for _ in range(levels):
+        image = cv2.pyrDown(image)
+        gaussian_pyramid.append(image)
+
+    return gaussian_pyramid
+
+def generate_laplacian_pyramid(gaussian_pyramid):
+    laplacian_pyramid = []
+
+    for i in range(len(gaussian_pyramid) - 1):
+        dstsize = (gaussian_pyramid[i].shape[1], gaussian_pyramid[i].shape[0])
+
+        upsampled = cv2.pyrUp(gaussian_pyramid[i+1], dstsize=dstsize)
+        laplacian = cv2.subtract(gaussian_pyramid[i], upsampled)
+
+        laplacian_pyramid.append(laplacian)
+    
+    laplacian_pyramid.append(gaussian_pyramid[-1])
+
+    return laplacian_pyramid
+
+def blend_pyramids(laplacianA, laplacianB, mask_pyramid):
+    blended_pyramid = []
+
+    for lapA, lapB, mask in zip(laplacianA, laplacianB, mask_pyramid):
+        blended = lapA * mask + lapB * (1 - mask)
+        blended_pyramid.append(blended)
+
+    return blended_pyramid
+
+def reconstruct_from_pyramid(laplacian_pyramid):
+    image = laplacian_pyramid[-1]
+
+    for i in range(len(laplacian_pyramid) - 2, -1, -1):
+        dstsize = (laplacian_pyramid[i].shape[1], laplacian_pyramid[i].shape[0])
+        image = cv2.pyrUp(image, dstsize=dstsize)
+        image = cv2.add(image, laplacian_pyramid[i])
+    
+    return image
+
+def debug_write(name, pyramid):
+    i = 0
+    for image in pyramid:
+        cv2.imwrite(f'./debug/{name}_{i}.png', image)
+        i += 1
+
+def get_laplacian_pyramid(image, levels):
+    gaussianA = generate_gaussian_pyramid(image.astype(np.float32), levels)
+    laplacianA = generate_laplacian_pyramid(gaussianA)
+    return laplacianA
+
+def laplacian_pyramid_blending(img1, img2, mask, levels=6):
+    mask = mask.astype(np.float32) / 255.0
+
+    laplacianA = get_laplacian_pyramid(img1.astype(np.float32), levels)
+    laplacianB = get_laplacian_pyramid(img2.astype(np.float32), levels)
+    
+    gaussianMask = generate_gaussian_pyramid(mask, levels)
+    
+    blended_pyramids = blend_pyramids(laplacianA, laplacianB, gaussianMask)
+
+    return blended_pyramids
+
 def merge_images(image1, image2):
     b, g, r, alpha = cv2.split(image2)
-    alpha_mask = alpha.astype(float) / 255.0
+    #alpha_mask = alpha.astype(float)# / 255.0
+    alpha_mask = 255 - np.stack([alpha] * 3, axis=-1)
+    
+    image2 = np.stack([b,g,r], axis=-1)
 
-    for c in range(3):
-        image1[:, :, c] = (alpha_mask * image2[:, :, c] + (1 - alpha_mask) * image1[:, :, c])
+    cv2.imwrite("./debug/image1.png", image1)
+    cv2.imwrite("./debug/image2.png", image2)
+    cv2.imwrite("./debug/mask.png", alpha_mask)
 
-    return image1
+    composite = laplacian_pyramid_blending(image1, image2, alpha_mask, levels=6)
+    #cv2.imwrite("./debug/composite.png", composite)
 
-def white_balance(img):
-    balanced_img = np.zeros_like(img) #Initialize final image
+    return composite
+
+def white_balance_match(settings, dest_img):
+    balanced_img = np.zeros_like(dest_img) #Initialize final image
+
+    print(settings)
 
     for i in range(3): #i stands for the channel index 
-        hist, bins = np.histogram(img[..., i].ravel(), 256, (0, 256))
-        bmin = np.min(np.where(hist>(hist.sum()*0.0005)))
-        bmax = np.max(np.where(hist>(hist.sum()*0.0005)))
-        balanced_img[...,i] = np.clip(img[...,i], bmin, bmax)
-        balanced_img[...,i] = (balanced_img[...,i]-bmin) / (bmax - bmin) * 255
+        balanced_img[...,i] = np.clip(dest_img[...,i], settings["bmin"][i], settings["bmax"][i])
+        balanced_img[...,i] = (balanced_img[...,i]-settings["bmin"][i]) / (settings["bmax"][i] - settings["bmin"][i]) * 255
     return balanced_img
 
 def ensure_alpha_channel(image):
@@ -201,24 +274,113 @@ def generate_noise_image(width, height, noise_type='gaussian', mean=0, stddev=25
 
     return noise
 
+def match_histograms(source, reference):
+    """
+    Match the histogram of the source image to that of the reference image.
+    
+    Args:
+        source (ndarray): The source image.
+        reference (ndarray): The reference image to match the exposure to.
+
+    Returns:
+        matched (ndarray): The exposure-matched source image.
+    """
+    # Convert images to grayscale
+    source_gray = cv2.cvtColor(source, cv2.COLOR_BGR2GRAY)
+    reference_gray = cv2.cvtColor(reference, cv2.COLOR_BGR2GRAY)
+    
+    # Calculate the cumulative histogram for both images
+    source_hist, bins = np.histogram(source_gray.flatten(), 256, [0, 256])
+    reference_hist, _ = np.histogram(reference_gray.flatten(), 256, [0, 256])
+
+    # Compute cumulative distribution functions (CDF)
+    source_cdf = source_hist.cumsum()
+    reference_cdf = reference_hist.cumsum()
+
+    # Normalize CDFs to range 0-255
+    source_cdf_normalized = source_cdf * float(255) / source_cdf[-1]
+    reference_cdf_normalized = reference_cdf * float(255) / reference_cdf[-1]
+
+    # Create a lookup table to map source pixel values to reference pixel values
+    lut = np.interp(source_cdf_normalized, reference_cdf_normalized, bins[:-1])
+
+    # Apply the LUT to the source image to adjust exposure
+    matched = cv2.LUT(source, np.uint8(lut))
+
+    return matched
+
+def match_exposure_across_images(images):
+    """
+    Match the exposure of multiple images to the exposure of the first image in the list.
+    
+    Args:
+        images (list): List of images (ndarray) to adjust.
+        
+    Returns:
+        matched_images (list): List of exposure-matched images.
+    """
+    # Take the first image as the reference for exposure matching
+    reference_image = images[0]
+    
+    matched_images = []
+    
+    for img in images:
+        matched_image = match_histograms(img, reference_image)
+        matched_images.append(matched_image)
+    
+    return matched_images
+
 def process_images(image_files):
     #images = [cv2.imread(image_file) for image_file in image_files]
 
-    base_image = cv2.imread(image_files[0])
+    blend_levels = 6
+
+    images = match_exposure_across_images([cv2.imread(image_file) for image_file in image_files])
+    
+    base_image = images[0]
     height, width, _ = base_image.shape
     width *= 2
     height *= 2
     base_image = cv2.resize(base_image, (width, height), interpolation=cv2.INTER_CUBIC)
-    base_image = white_balance(base_image)
-    
-    for image_file in image_files[1:]:
-        overlay_image = cv2.imread(image_file)  # Load the next image
+    #base_image = white_balance(base_image)
+
+    cv2.imwrite("./debug/base_image.png", base_image)
+
+    white_balence_settings = {
+        "bmin": [[], [], []],
+        "bmax": [[], [], []],
+    }
+
+    # if True:
+    #     stitched_image = np.array(cv2.imread(images[0]))
+
+    #     for image in images[1:]:
+    #         dest_img = cv2.imread(image)
+    #         stitched_image = np.concatenate((stitched_image, dest_img), axis=0)
+
+    #     for i in range(3):
+    #         hist, bins = np.histogram(stitched_image[..., i].ravel(), 256, (0, 256))
+    #         white_balence_settings["bmin"][i] = np.min(np.where(hist>(hist.sum()*0.0005)))
+    #         white_balence_settings["bmax"][i] = np.max(np.where(hist>(hist.sum()*0.0005)))
+
+
+    #base_image = white_balance_match(white_balence_settings, base_image)
+    base_pyramid = get_laplacian_pyramid(base_image.astype(np.float32), blend_levels)
+
+    count = 0
+    for image in images[1:]:
+        print(f"{count}")
+        count += 1
+        overlay_image = image# cv2.imread(image_file)  # Load the next image
+        #overlay_image = white_balance_match(white_balence_settings, overlay_image)
+
+        base_image = reconstruct_from_pyramid(base_pyramid)
 
         gray_base = cv2.cvtColor(base_image, cv2.COLOR_BGR2GRAY)
         gray_overlay = cv2.cvtColor(overlay_image, cv2.COLOR_BGR2GRAY)
 
         sift = cv2.SIFT_create()
-        keypoints_base, descriptors_base = sift.detectAndCompute(gray_base, None)
+        keypoints_base, descriptors_base = sift.detectAndCompute(gray_base.astype(np.uint8), None)
         keypoints_overlay, descriptors_overlay = sift.detectAndCompute(gray_overlay, None)
 
         index_params = dict(algorithm=1, trees=5)
@@ -240,31 +402,36 @@ def process_images(image_files):
                 points_base[i, :] = keypoints_base[match.queryIdx].pt
                 points_overlay[i, :] = keypoints_overlay[match.trainIdx].pt
 
+
             h, mask = cv2.findHomography(points_overlay, points_base, cv2.RANSAC)
             
-            #debug_overlay_image = generate_noise_image(overlay_image.shape[1], overlay_image.shape[0], 'uniform')
-            #overlay_image = debug_overlay_image
-
             unwarped_base = cv2.warpPerspective(base_image, h, (width//2, height//2), flags=cv2.WARP_INVERSE_MAP)
 
-            whited_overlay = white_balance(overlay_image)
+            whited_overlay = blur_edges(overlay_image, 100)
+            cv2.imwrite("./debug/whited_overlay.png", whited_overlay)
 
-            #blurred_overlay = blur_edges(whited_overlay, 500)
+            warped_overlay = cv2.warpPerspective(whited_overlay, h, (width, height))
 
-            warped_overlay = match_histograms(whited_overlay, unwarped_base)
-            
-            p = Path(image_file)
-            extensions = "".join(p.suffixes)
-            cv2.imwrite(str(p).replace(extensions, "_wb.png"), warped_overlay)
+            cv2.imwrite("./debug/warped_overlay.png", warped_overlay)
 
-            warped_overlay = cv2.warpPerspective(warped_overlay, h, (width, height))
+            b, g, r, alpha = cv2.split(warped_overlay)
+            alpha_mask = np.stack([alpha] * 3, axis=-1)
+            cv2.imwrite("./debug/alpha_mask.png", alpha_mask)
 
-            base_image = merge_images(base_image, warped_overlay)
+            warped_overlay = np.stack([b,g,r], axis=-1)
+
+            warped_pyramid = get_laplacian_pyramid(warped_overlay.astype(np.float32), blend_levels)
+
+            gaussianMask = generate_gaussian_pyramid(alpha_mask.astype(np.float32) / 255.0, blend_levels)
+
+            base_pyramid = blend_pyramids(warped_pyramid, base_pyramid, gaussianMask)
+
         else:
             print(f"Not enough matches found to compute homography for {image_file}.")
         
         #break
 
+    base_image = reconstruct_from_pyramid(base_pyramid).astype(np.uint8)
     return base_image
 
 if __name__ == "__main__":

@@ -1,6 +1,7 @@
 .vscode
 .venv
 build
+.cache
 buffers/*
 inputs/*
 
@@ -10,3 +11,6 @@ inputs/*
 
 # valgrind files
 vgcore.*
+
+*.png
+*.jpg

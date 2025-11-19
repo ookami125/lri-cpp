@@ -8,7 +8,7 @@ uint16_t average(uint16_t lhs, uint16_t rhs) {
     return (uint16_t)((lhs >> 1) + (rhs >> 1u) + (lhs & rhs & 1));
 }
 
-Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode) {
+Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DemosaicMode mode) {
 
     const int R=0, G=1, B=2;
     char map[] = { R,G,G,B };
@@ -32,10 +32,10 @@ Image debayerImage(Image* srcImage, uint8_t bayerPatternOffset, DebayerMode mode
 
     switch(mode) {
         default:
-        case DebayerMode::Filter:
+        case DemosaicMode::Photosite:
             break;
 
-        case DebayerMode::Interpolate: {
+        case DemosaicMode::Interpolate: {
             //Interpolate RGB values to other pixels
             Image debayeredImage = image;
             for(int32_t y=0; y<(int64_t)image.height; y++) {

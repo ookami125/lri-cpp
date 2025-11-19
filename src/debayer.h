@@ -4,10 +4,11 @@
 
 struct Image;
 
-enum class DebayerMode {
+enum class DemosaicMode {
     None,
-    Filter,
+    Photosite,
     Interpolate,
+    WhiteBalance,
 };
 
-Image debayerImage(Image* image, uint8_t bayerPatternOffset, DebayerMode mode);
+Image debayerImage(Image* image, uint8_t bayerPatternOffset, DemosaicMode mode);

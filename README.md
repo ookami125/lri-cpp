@@ -12,9 +12,9 @@ This program is based on the information provided by [@gennyble](https://www.git
     
     Options:
       -h --help     Show this screen.
-      -f --format   Output format [default: PGM] (PGM)
+      -f --format   Output format [default: PNG] (PGM, PNG, JPEG)
       -o --output   Output path [default: "buffers"]
-      -d --debayer  Debayering mode [default: Interleaved] (None, Filter, Interleaved)
+      -d --demosaic  Demosaic mode [default: Interpolate] (None, Photosite, Interpolate, WhiteBalance, LMMSE)
 
 ## Building
     $ git clone https://github.com/ookami125/lri-cpp

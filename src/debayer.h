@@ -8,7 +8,7 @@ enum class DemosaicMode {
     None,
     Photosite,
     Interpolate,
-    WhiteBalance,
+    LMMSE,
 };
 
 Image debayerImage(Image* image, uint8_t bayerPatternOffset, DemosaicMode mode);

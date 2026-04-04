@@ -87,6 +87,7 @@ struct Options {
     std::string outputPath = "buffers";
     DemosaicMode debayerMode = DemosaicMode::Interpolate;
     std::vector<std::string> positionalArgs;
+    bool whitebalance;
 };
 
 
@@ -241,10 +242,11 @@ void usage(int argc, char** argv, int exit_code)
     printf("  %s -h | --help\n", progname);
     printf("\n");
     printf("Options:\n");
-    printf("  -h --help     Show this screen.\n");
-    printf("  -f --format   Output format [default: PNG] (PGM,PNG,JPEG)\n");
-    printf("  -o --output   Output path [default: \"buffers\"]\n");
-    printf("  -d --demosaic  Demosaic mode [default: Interpolated] (None, Photosite, Interpolated, WhiteBalance)\n");
+    printf("  -h --help         Show this screen.\n");
+    printf("  -f --format       Output format [default: PNG] (PGM,PNG,JPEG)\n");
+    printf("  -o --output       Output path [default: \"buffers\"]\n");
+    printf("  -d --demosaic     Demosaic mode [default: Interpolated] (None, Photosite, Interpolated, LMMSE)\n");
+    printf("  -w --whitebalance Whitebalance the final image");
 
     std::exit(exit_code);
 }
@@ -309,7 +311,7 @@ ErrorOr<Options> argparse(int argc, char** argv) {
                 {"photosite", DemosaicMode::Photosite},
                 {"interpolate", DemosaicMode::Interpolate},
                 {"interpolated", DemosaicMode::Interpolate},
-                {"whitebalance", DemosaicMode::WhiteBalance},
+                {"lmmse", DemosaicMode::LMMSE},
             };
             auto optMode = modeStr.find(toLower(argument));
             if(optMode == modeStr.end()) {
@@ -317,6 +319,8 @@ ErrorOr<Options> argparse(int argc, char** argv) {
             }
             ret.debayerMode = optMode->second;
             argi += seperateArgFlag;
+        } else if(option == "w" || option == "whitebalance") {
+            ret.whitebalance = true;
         } else {
             return {{"Error: Unknown option (" + option + ")\n"}};
         }
